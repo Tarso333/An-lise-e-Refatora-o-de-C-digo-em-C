@@ -1,0 +1,168 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+typedef struct Registro {
+    char proprietario[50];
+    char combustivel[10];
+    char modelo[20];
+    char cor[20];
+    char placa[8];
+    int numChassi, ano;
+    struct Registro *prox;
+} Registro;
+
+// Função auxiliar para limpar o buffer de entrada
+void limparBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+// Função para criar um novo registro alocado dinamicamente
+Registro* criarRegistro() {
+    Registro *novoRegistro = (Registro*)malloc(sizeof(Registro));
+    if (novoRegistro == NULL) {
+        fprintf(stderr, "Memória indisponível.\n");
+        exit(EXIT_FAILURE);
+    }
+    novoRegistro->prox = NULL;
+    return novoRegistro;
+}
+
+// Função auxiliar para validar o tipo de combustível
+int validarCombustivel(const char *combustivel) {
+    return (strcmp(combustivel, "alcool") == 0 || strcmp(combustivel, "diesel") == 0 || strcmp(combustivel, "gasolina") == 0);
+}
+
+// Função auxiliar para validar o formato da placa
+int validarPlaca(const char *placa) {
+    if (strlen(placa) != 7) return 0;
+    for (int i = 0; i < 3; i++) if (!isalpha(placa[i])) return 0;
+    for (int i = 3; i < 7; i++) if (!isdigit(placa[i])) return 0;
+    return 1;
+}
+
+// Função para ler string com validação de entrada
+void lerString(char *buffer, int tamanho) {
+    fgets(buffer, tamanho, stdin);
+    buffer[strcspn(buffer, "\n")] = '\0';
+}
+
+// Função para cadastrar um novo veículo
+Registro* cadastrar(Registro *lista) {
+    Registro *novoRegistro = criarRegistro();
+
+    printf("Digite nome do proprietario:\n");
+    lerString(novoRegistro->proprietario, sizeof(novoRegistro->proprietario));
+
+    do {
+        printf("Insira o tipo de combustivel (alcool, diesel ou gasolina):\n");
+        lerString(novoRegistro->combustivel, sizeof(novoRegistro->combustivel));
+    } while (!validarCombustivel(novoRegistro->combustivel));
+
+    printf("Insira o modelo:\n");
+    lerString(novoRegistro->modelo, sizeof(novoRegistro->modelo));
+
+    printf("Insira a cor:\n");
+    lerString(novoRegistro->cor, sizeof(novoRegistro->cor));
+
+    printf("Insira o numero do chassi:\n");
+    scanf("%d", &novoRegistro->numChassi);
+    limparBuffer();
+
+    printf("Insira o ano:\n");
+    scanf("%d", &novoRegistro->ano);
+    limparBuffer();
+
+    do {
+        printf("Insira a placa (ex: ABC1234):\n");
+        lerString(novoRegistro->placa, sizeof(novoRegistro->placa));
+    } while (!validarPlaca(novoRegistro->placa));
+
+    if (lista == NULL) {
+        return novoRegistro;
+    } else {
+        Registro *atual = lista;
+        while (atual->prox != NULL) {
+            atual = atual->prox;
+        }
+        atual->prox = novoRegistro;
+        return lista;
+    }
+}
+
+// Funções para listagem e manipulação dos registros (sem alterações significativas)
+void carrosDiesel(Registro *lista) {
+    Registro *atual = lista;
+    if (lista == NULL) {
+        printf("Lista vazia.\n");
+        return;
+    }
+    printf("Proprietarios de carros movidos a diesel do ano de 2010 ou posterior:\n");
+    while (atual != NULL) {
+        if (atual->ano >= 2010 && strcmp(atual->combustivel, "diesel") == 0) {
+            printf("Proprietario: %s\n", atual->proprietario);
+        }
+        atual = atual->prox;
+    }
+}
+
+void placaComJ(Registro *lista) {
+    Registro *atual = lista;
+    if (lista == NULL) {
+        printf("Lista vazia.\n");
+        return;
+    }
+    printf("Placas que comecam com \"J\" e terminam com 0, 2, 4 ou 7:\n");
+    while (atual != NULL) {
+        if (atual->placa[0] == 'J' && (atual->placa[6] == '0' || atual->placa[6] == '2' || atual->placa[6] == '4' || atual->placa[6] == '7')) {
+            printf("Placa: %s - Proprietario: %s\n", atual->placa, atual->proprietario);
+        }
+        atual = atual->prox;
+    }
+}
+
+void liberarLista(Registro *lista) {
+    Registro *atual = lista;
+    while (atual != NULL) {
+        Registro *prox = atual->prox;
+        free(atual);
+        atual = prox;
+    }
+}
+
+int main() {
+    int opcao, buscaChassi;
+    Registro *lista = NULL;
+
+    do {
+        printf("Digite a opcao desejada:\n");
+        printf("1 - Cadastro de Veiculo.\n");
+        printf("2 - Proprietarios de carros do ano de 2010 ou posterior movidos a diesel.\n");
+        printf("3 - Placas que comecam com \"J\" e terminam com 0, 2, 4 ou 7.\n");
+        printf("0 - Finalizar.\n");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1:
+                lista = cadastrar(lista);
+                break;
+            case 2:
+                carrosDiesel(lista);
+                break;
+            case 3:
+                placaComJ(lista);
+                break;
+            case 0:
+                liberarLista(lista);
+                break;
+            default:
+                printf("Opcao invalida.\n");
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
